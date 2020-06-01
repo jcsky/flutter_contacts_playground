@@ -5,15 +5,16 @@ import 'package:permission_handler/permission_handler.dart';
 import './contacts_list_page.dart';
 import './contacts_picker_page.dart';
 
-void main() => runApp(ContactsExampleApp());
+void main() => runApp(ContactsApp());
 
 // iOS only: Localized labels language setting is equal to CFBundleDevelopmentRegion value (Info.plist) of the iOS project
 // Set iOSLocalizedLabels=false if you always want english labels whatever is the CFBundleDevelopmentRegion value.
 const iOSLocalizedLabels = false;
 
-class ContactsExampleApp extends StatelessWidget {
+class ContactsApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    print('=== ContactsApp build');
     return MaterialApp(
       home: HomePage(),
       routes: <String, WidgetBuilder>{
@@ -33,48 +34,37 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   @override
   void initState() {
+    print('=== initState');
     super.initState();
     _askPermissions();
   }
 
   Future<void> _askPermissions() async {
-    PermissionStatus permissionStatus = await _getContactPermission();
-    if (permissionStatus != PermissionStatus.granted) {
+    print('=== _askPermissions');
+    PermissionStatus permissionStatus = await Permission.contacts.request();
+    if (!permissionStatus.isGranted) {
       _handleInvalidPermissions(permissionStatus);
     }
   }
 
-  Future<PermissionStatus> _getContactPermission() async {
-    PermissionStatus permission = await PermissionHandler()
-        .checkPermissionStatus(PermissionGroup.contacts);
-    if (permission != PermissionStatus.granted &&
-        permission != PermissionStatus.disabled) {
-      Map<PermissionGroup, PermissionStatus> permissionStatus =
-          await PermissionHandler()
-              .requestPermissions([PermissionGroup.contacts]);
-      return permissionStatus[PermissionGroup.contacts] ??
-          PermissionStatus.unknown;
-    } else {
-      return permission;
-    }
-  }
-
   void _handleInvalidPermissions(PermissionStatus permissionStatus) {
-    if (permissionStatus == PermissionStatus.denied) {
+    if (permissionStatus == PermissionStatus.denied ||
+        permissionStatus == PermissionStatus.permanentlyDenied) {
       throw PlatformException(
           code: "PERMISSION_DENIED",
           message: "Access to location data denied",
           details: null);
-    } else if (permissionStatus == PermissionStatus.disabled) {
+    } else if (permissionStatus == PermissionStatus.restricted) {
       throw PlatformException(
-          code: "PERMISSION_DISABLED",
-          message: "Location data is not available on device",
+          code: "PERMISSION_RESTRICTED",
+          message: "Permission active restrictions such as parental controls",
           details: null);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    print('=== build');
     return Scaffold(
       appBar: AppBar(title: const Text('Contacts Plugin Example')),
       body: SafeArea(
